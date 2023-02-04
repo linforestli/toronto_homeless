@@ -11,15 +11,15 @@ In this repository, you can find the data and codes used to produce the paper.
 This repository contains
 
 * Input 
-+ Raw data from Open Data Toronto
-+ Data cleaned
+  - Raw data from Open Data Toronto
+  - Data cleaned
 
 * Output
-+ The paper in pdf format and qmd format.
-+ The references used in the paper.
+  - The paper in pdf format and qmd format.
+  - The references used in the paper.
 
 * Scripts
-+ R-scripts used for data download, simulation and cleaning
+  + R-scripts used for data download, simulation and cleaning
 
 * License information
 
