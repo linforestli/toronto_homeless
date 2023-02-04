@@ -1,0 +1,202 @@
+---
+title: "Exploring the Impact of Toronto's Homelessness Solutions Service Plan on Homeless Populations"
+author: "Linrong Li"
+thanks: "Code and data are available at: LINK."
+date: "03-Feb-2023"
+date-format: "MMM DD YYYY"
+abstract: "This paper explores the impact of proposed solutioins by the City of Toronto in reducing homeless population, with a focus on indigenous homelessness, chronic homelessness, and change of flows in the shelter system. Using the Toronto Shelter System Flow dataset retrieved from Open Data Toronto, the changes in homelessness were analyzed. The results showed a decrease in the indigenous homeless population and people returning to shelters, but no significant changes in chronic homelessness and new inflows were found."
+format: pdf
+toc: TRUE
+bibliography: references.bib
+mainfont: Times New Roman
+sansfont: Times New Roman
+fontsize: 12pt
+---
+
+```{r}
+#| include: FALSE
+###Working environment settings###
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(opendatatoronto)
+library(ggplot2)
+library(zoo)
+library(knitr)
+
+flow_data <- read.csv(here::here("inputs/data/reduced.csv"))
+flow_data$date.mmm.yy. <- as.Date(as.yearmon(flow_data$date.mmm.yy., format = "%b %Y"))
+```
+
+\newpage
+
+# Introduction
+
+It is not difficult to tell that homelessness has become a persistent problem in Toronto for a very long time. One can easily spot homeless people resting at subway stations, awaiting in line for free food, and tenting in parks when travelling downtown Toronto. What makes it even worse is that as our society is gradually recovering from the COVID-19 pandemic, more and more have noticed that the economy is experiencing serious challenges. One of the evident indicators is the dramatic decrease in housing affordability. With the housing affordability issue in Toronto officially becoming a crisis, some Torontonians have no choice but to become homeless. In response to the growing problem of homelessness, the City of Toronto has released a service plan to reduce homelessness in the future in October 2021 [@citereport]. This paper will evaluate the effectiveness of the proposed solutions in the service plan by analyzing the data on the flow of the Toronto shelter system from October 2020 to October 2022, which are one year before and one year after the release of the service plan.
+
+In this paper, I looked at the Toronto Shelter System Flow data available on Open Data Toronto. The details of the data collection and cleaning process will be talked about later in Section 2. I have decided to compare the data from before the release of the service plan and one after the release to find out if the goals are met or not with a focus on the indigenous population, chronic homelessness and the changes of new inflows and returns. Related data were visualized to help the audience better understand the change. Then, the limitations and bias of the dataset were discussed to help with improvements in the future. This paper is written in a reproducible manner to allow for future additions and extensions. The aim of the paper is to provide insights into the current homelessness situation in Toronto and suggest the possibility of future efforts in solving homelessness in Toronto.
+
+# Data
+
+This section will introduce the data download, simulation and cleaning process.
+
+## Data Simulation
+
+To better understand the homelessness situation in Toronto, I carried out a data simulation that covered the period from October 2020 to October 2022. The simulation aimed to generate the shelter flow data and to analyze the population of indigenous homelessness, chronic homelessness, new inflows, and returns.
+
+The populations were generated based on Poisson Distribution using lambda values similar to the actual data respectively. The generated data were then tested to make sure it is consistent with the real-world experiences. For example, all the population generated are positive integers. The detailed script was saved as a R-script named "00-simulation".
+
+## Data Collection
+
+The report utilized data obtained from Open Data Toronto, which is an official data portal maintained by the City of Toronto. The data, named "Toronto Shelter System Flow", was retrieved using the R package "opendatatoronto" and saved as a local csv file in the R-script named "00-download_data". There were other dataset related to homelessness but this one was chosen because it particularly marks on the flow of the homeless population in the shelter system, which helps to analyze the new inflows and returns. The data is updated on a monthly basis and was last refreshed on January 17th, 2023 as of February 2nd, 2023. The City of Toronto provides shelters as a temporary solution for individuals experiencing homelessness, which is tracked by the Shelter Management Information System (SMIS). The system captures information about individuals accessing the shelters, including the number of unique individuals who have utilized the shelter system in the past three months and are currently experiencing homelessness. The data collected by the system was organized into 14 variables, including date, population group each individual falls into, individuals returning from housing to shelters, individuals moving to housing, five different age groups, three gender types (female, male, and transgender), actively homeless individuals, and inactive individuals.
+
+## Data Cleaning
+
+To make the report more specific, only columns that piqued interest at earlier stage were selected from the raw data. These columns includes: date, population group, people who returned from housing and returned to the shelters, people who are newly identified as homeless, people who moved to housing, people who became inactive and people who are actively homeless. Note that not every column was used in the later analysis.
+
+The following table (@tbl-data) shows an overview of the reduced dataset that was used in the later analysis:
+
+```{r}
+#| label: tbl-data
+#| echo: false
+#| tbl-cap: Reduced dataset
+#| fig-width: 8
+#| fig-height: 4
+
+flow_data %>% 
+  slice(1:10) %>% 
+  kable(caption = "First 10 rows of the reduced dataset",
+    col.names = c("X", "Date", "Population Group", "Returned from housing", "Returned to the shelters", "Newly Identified", "Moved to Housing", "Become Inactive", "Actively Homeless"),
+    booktabs = TRUE,
+    linesep = "" 
+    )
+```
+
+The column Population_group shows how each individual was classified into seven categories, respectively all population, chronic, refugees, families, youth, indigenous, single adult and non-refugees, where all population stands for the total number of people before categorization. This paper will draw special attention on people belonging to the indigenous group and the chronic group. Column "return_from_housing" defines those who moved to a permanent housing but returned to shetlers in that month, while "return_to_shelter" stands for people who were previously using the shelter system, then did not use the system for 3 months or longer, and have returned. Column "newly_identified" records people used the shelter system for the first time. The activity of shelter users are defined by whether the person who used the shelters accessed the shelters in the past three months or not.
+
+## Data Processing
+
+The data analysis was primarily performed using R [@citeR]. For downloading the data, package OpenDataToronto was used [@citeODT]. Package zoo was used to assist the conversion of class of the date column from char to date [@citezoo]. To plot graphs, package ggplot2 was used. Other packages used in the data analysis include tidyverse [@citetidyverse], dplyr [@citedplyr], and knitr[@citeknitr].
+
+# Graph
+
+Three sets of visualizations were created to effectively illustrate the results of the proposed solutions, focusing on the indigenous homelessness population, chronic homelessness, new inflows, and individuals who returned to the facilities.
+
+## Graph 1
+
+In the service plan, advancing reconciliation was put at the first in the implementation priorities section. Then, the term "advancing reconciliation" was further explained as "meaningfully address indigenous homelessness". The City plans to provide services such as increasing specific funding, building culturally appropriate shelters and ensuring the availability of resources to indigenous organizatioins. It also proposed one of the measurements of success as a reduced in homelessness among the indigenous population in Toronto.
+
+To better find out if the City of Toronto effectively implemented their proposed solutions for the indigenous people in the past year, a graph was plotted using newly identified indigenous homeless people against date. A separate data frame was created based on the original data to filter out the people falls into the indigenous population group, as well as the data recorded from January 2021 to October 2022. Note that the City of Toronto only started tracking indigenous homeless people since 2021 so there were no available data for October, November and December 2020. Below shows the graph (@fig-indigenous-time), with the vertical line indicating the release of the service plan:
+
+```{r}
+#| label: fig-indigenous-time
+#| fig-cap: Shelter used by indigenous homeless people every month from Jan 2021 to Oct 2022
+#| echo: false
+#| fig-width: 8
+#| fig-height: 4
+
+indigenous <- flow_data %>% 
+  filter(population_group == "Indigenous",
+         date.mmm.yy. >= "2020-10-01", date.mmm.yy. <= "2022-10-01")
+
+indigenous_time <- indigenous %>% 
+  ggplot(., aes(x = date.mmm.yy., y = newly_identified)) + 
+  labs(x = "Date", y = "Indigenous Population") + 
+  geom_line(aes(group = 1), color="darkorange") + 
+  geom_point(color = "darkorange") + 
+  geom_vline(xintercept = as.Date("2021-10-01"), linetype = 6) +  
+  scale_x_date(date_breaks = "1 month", date_labels = "%b %Y") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+indigenous_time
+```
+
+The graph demonstrates that after the implementation of the service plan, there has been a downward trend in the indigenous homeless population, despite some fluctuations throughout the year. The peak number of indigenous homeless individuals has decreased compared to both 2021 and 2022, and the lowest population recorded in a given month has also seen a significant decline. Overall, it appears that the City of Toronto's efforts to reduce indigenous homelessness, as outlined in their service plan, have had a positive impact in 2022, with the number of newly identified homeless individuals decreasing.
+
+## Graph 2
+
+It can also be found in the service plan that the City of Toronto aims at reducing chronic homelessness by prioritizing housing resources for maximum impact. Chronic homelessness is defined as the people who has recorded a minimum of 180 overnight stay in the past year or the person has recurrent overnight stays over the past three years with a cumulative duration of at least 546 nights by the City of Toronto [@citewebsite]. The proposed solutions include reviewing the existing priority rules, implement new priority policies and increase access for homeless people to private housing market.
+
+The following graph (@fig-chronic-time) shows the change in the chronic homeless population that are active over time. A separate data frame was created based on the original data to filter out the people fall into the chronic population group, as well as the data recorded from October 2020 to October 2022. The vertical line shows the release of the service plan.
+
+```{r}
+#| label: fig-chronic-time
+#| fig-cap: Shelter used by chronic homeless people from Oct 2020 to Oct 2022
+#| echo: false
+#| fig-width: 8
+#| fig-height: 4
+chronic <- flow_data %>% 
+  filter(population_group == "Chronic",
+         date.mmm.yy. >= "2020-10-01", date.mmm.yy. <= "2022-10-01")
+
+chronic_time <- chronic %>% 
+  ggplot(., aes(x = date.mmm.yy., y = actively_homeless)) + 
+  labs(x = "Date", y = "Chronic Population") + 
+  geom_line(aes(group = 1), color = "darkred") + 
+  geom_point(color = "darkred") + 
+  geom_vline(xintercept = as.Date("2021-10-01"), linetype = 6) + 
+  scale_x_date(date_breaks = "1 month", date_labels = "%b %Y") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+chronic_time
+```
+
+However, the results from the data analyzed showed that the efforts put in place by the City of Toronto have not effectively reduced the chronic homeless population. The graph plotting the change in chronic homelessness over time showed an upward trend, with every month after the release of the service plan surpassing the highest point recorded before the release. This is evidenced by a new peak of around 5,000 in September 2022, while the population was only fluctuating between 3,500 to 4,000 prior to the release. In conclusion, the City of Toronto needs to reevaluate its approach towards reducing chronic homelessness.
+
+## Graph 3
+
+Moreover, the City of Toronto also aims in developing an integrated system responses. For this, they plan on implementing shelter diversion approaches to differentiate new inflows and people who returned to shelters. They defined success as a reduction in new inflows and a reduction in returns to homelessness.
+
+To evaluate the effectiveness of these approaches, a set of graphs (@fig-flow-time, @fig-return-time)  were plotted, one for new inflows and one for returns. The data for these graphs were taken from October 2020 to October 2022 and filtered out from the original data. The release of the service plan is indicated by a vertical line in the graphs.
+
+The results show that while the number of new inflows increased after the service plan was released, the pattern of this increase is more stable compared to the previous year. On the other hand, the number of returns showed a decreasing trend, dropping to below 350 in October 2022. This suggests that while the City of Toronto's solutions may not be effective in reducing new inflows, they have had a positive impact on reducing returns to shelters.
+
+```{r}
+#| echo: false
+#| label: fig-flow-time
+#| fig-cap: New inflows and returns every month from Oct 2020 to Oct 2022
+#| fig-width: 8
+#| fig-height: 4
+inflow <- flow_data %>% filter(population_group == "All Population", date.mmm.yy. >= "2020-10-01", date.mmm.yy. <= "2022-10-01")
+
+inflow_time <- inflow %>% 
+  ggplot(., aes(x = date.mmm.yy., y = newly_identified)) + 
+  labs(x = "Date", y = "New inflows", caption = "New inflows into shelters in 2021 and 2022") + 
+  geom_line(aes(group = 1), color="navy") + 
+  geom_vline(xintercept = as.Date("2021-10-01"), linetype = 6) + 
+  scale_x_date(date_breaks = "1 month", date_labels = "%b %Y") + 
+  geom_point(color = "navy") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+inflow_time
+```
+```{r}
+#| echo: false
+#| label: fig-return-time
+#| fig-cap: New inflows and returns every month from Oct 2020 to Oct 2022
+#| fig-width: 8
+#| fig-height: 4
+total_return <- flow_data %>% mutate(return_total = returned_from_housing + returned_to_shelter)
+
+selected_return <- total_return %>% filter(population_group == "All Population", date.mmm.yy. >= "2020-10-01", date.mmm.yy. <= "2022-10-01")
+
+return_time <- selected_return %>% ggplot(., aes(x = date.mmm.yy., y = return_total)) + labs(x = "Date", y = "Returned Population", caption = "People returned to shelter") + geom_line(aes(group = 1), color="lightskyblue")+ geom_point(color = "lightskyblue") + scale_x_date(date_breaks = "1 month", date_labels = "%b %Y") + geom_vline(xintercept = as.Date("2021-10-01"), linetype = 6) + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+return_time
+```
+
+\newpage
+
+# Limitation and Bias
+
+It is important to note that the dataset only provides a partial view of the homeless population in Toronto. As listed on the dataset's description website, it only records individuals who have used indoor services and excluded those who live outdoors. This limitation is significant as it means that the dataset may not fully reflect the true extent of homelessness in the city. The homelessness may be more widespread and severe than what the data shows. The dataset also did not cover the shelter sites that are not funded by the government and using the SMIS. In my opinion, these shelters are also an important part in knowing the change in homelessness population and the flow of homelessness, and therefore may influence the decisions in determining the effectiveness of the City of Toronto's proposed solutions.
+
+# Conclusion
+
+In conclusion, the analysis of the data collected by the City of Toronto on homelessness suggests that some of the proposed solutions have been effective in addressing specific aspects of homelessness in the city. Specifically, the efforts aimed at reducing indigenous homelessness and the number of people returning to shelters seem to have made a positive impact, as seen in the decreasing trend of newly identified indigenous homeless people and the decline in the number of people returning to shelters.
+
+However, the data also highlights areas that require further attention and improvement, such as reducing chronic homelessness and addressing new inflows of homeless individuals. The data limitations noted, such as the exclusion of individuals who are homeless but do not use indoor services, emphasize the need for continued monitoring and evaluation of the City's efforts in addressing homelessness, to ensure that all individuals in need receive the support and resources they require.
+
+\newpage
+
+# References
